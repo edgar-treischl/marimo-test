@@ -23,12 +23,11 @@ def _():
     return alt, mo, pd
 
 
-
 @app.cell
 def _(mo, pd):
+    import sys
     from pathlib import Path
     from urllib.request import urlopen
-    import sys
 
     location = mo.notebook_location()
     data_path = location / "public" / "data" / "penguins.csv"
@@ -53,7 +52,6 @@ def _(mo, pd):
     return (df,)
 
 
-
 @app.cell
 def _(mo):
     mo.md("""
@@ -62,15 +60,17 @@ def _(mo):
     Explore penguin measurements across **Adelie**, **Chinstrap**,
     and **Gentoo** species.
 
-    Use the filter to compare species and discover how flipper length
-    relates to body mass.
+    Compare flipper length, body mass, and species averages using
+    the interactive charts below.
     """)
     return
 
 
 @app.cell
 def _(df, mo):
-    species_options = ["All species"] + sorted(df["species"].unique().tolist())
+    species_options = ["All species"] + sorted(
+        df["species"].unique().tolist()
+    )
 
     species = mo.ui.dropdown(
         options=species_options,
@@ -101,11 +101,11 @@ def _(filtered_df, mo):
                 value=f"{len(filtered_df):,}",
             ),
             mo.stat(
-                label="Avg. body mass",
+                label="Average body mass",
                 value=f"{filtered_df['body_mass_g'].mean():,.0f} g",
             ),
             mo.stat(
-                label="Avg. flipper length",
+                label="Average flipper length",
                 value=f"{filtered_df['flipper_length_mm'].mean():.1f} mm",
             ),
         ],
@@ -118,15 +118,17 @@ def _(filtered_df, mo):
 def _(alt, filtered_df):
     scatter = (
         alt.Chart(filtered_df)
-        .mark_circle(size=85, opacity=0.8)
+        .mark_circle(size=100, opacity=0.8)
         .encode(
             x=alt.X(
                 "flipper_length_mm:Q",
                 title="Flipper length (mm)",
+                scale=alt.Scale(zero=False),
             ),
             y=alt.Y(
                 "body_mass_g:Q",
                 title="Body mass (g)",
+                scale=alt.Scale(zero=False),
             ),
             color=alt.Color(
                 "species:N",
@@ -134,16 +136,23 @@ def _(alt, filtered_df):
                 scale=alt.Scale(scheme="set2"),
             ),
             tooltip=[
-                "species:N",
-                "island:N",
-                "sex:N",
-                "flipper_length_mm:Q",
-                "body_mass_g:Q",
+                alt.Tooltip("species:N", title="Species"),
+                alt.Tooltip("island:N", title="Island"),
+                alt.Tooltip("sex:N", title="Sex"),
+                alt.Tooltip(
+                    "flipper_length_mm:Q",
+                    title="Flipper length (mm)",
+                ),
+                alt.Tooltip(
+                    "body_mass_g:Q",
+                    title="Body mass (g)",
+                ),
             ],
         )
         .properties(
             title="Flipper length vs. body mass",
-            height=350,
+            width="container",
+            height=420,
         )
         .interactive()
     )
@@ -177,8 +186,9 @@ def _(alt, filtered_df):
             ),
             color=alt.Color(
                 "species:N",
-                legend=None,
+                title="Species",
                 scale=alt.Scale(scheme="set2"),
+                legend=None,
             ),
             tooltip=[
                 alt.Tooltip("species:N", title="Species"),
@@ -195,7 +205,17 @@ def _(alt, filtered_df):
         )
         .properties(
             title="Average body mass by species",
-            height=300,
+            width="container",
+            height=320,
+        )
+        .configure_view(strokeOpacity=0)
+        .configure_axis(
+            labelFontSize=12,
+            titleFontSize=14,
+        )
+        .configure_title(
+            fontSize=18,
+            anchor="start",
         )
     )
 
@@ -208,10 +228,10 @@ def _(mo):
     mo.md("""
     ---
 
-    ### Explore the data
+    ## Explore the data
 
-    The table below supports sorting, filtering, searching, and
-    downloading the data for further analysis.
+    Search, sort, filter, and inspect individual observations
+    using marimo's built-in dataframe viewer.
     """)
     return
 
