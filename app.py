@@ -23,10 +23,22 @@ def _():
     return alt, mo, pd
 
 
+
 @app.cell
 def _(mo, pd):
-    data_path = mo.notebook_location() / "public" / "data" / "penguins.csv"
-    df = pd.read_csv(data_path)
+    from pathlib import Path
+    from urllib.request import urlopen
+    import sys
+
+    location = mo.notebook_location()
+    data_path = location / "public" / "data" / "penguins.csv"
+
+    if sys.platform == "emscripten":
+        with urlopen(str(data_path)) as response:
+            df = pd.read_csv(response)
+    else:
+        df = pd.read_csv(Path(data_path))
+
     df = df.dropna(
         subset=[
             "species",
@@ -37,7 +49,9 @@ def _(mo, pd):
             "sex",
         ]
     )
+
     return (df,)
+
 
 
 @app.cell
